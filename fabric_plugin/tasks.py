@@ -18,6 +18,7 @@ import importlib
 import json
 import requests
 import tempfile
+import sys
 from StringIO import StringIO
 
 from six import exec_
@@ -114,7 +115,14 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
     base_dir = process.get('base_dir', DEFAULT_BASE_DIR)
     ctx_server_port = process.get('ctx_server_port')
 
-    proxy_client_path = proxy_client.__file__
+    if getattr(sys, 'frozen', False):
+        proxy_client_path = os.path.join(sys._MEIPASS,
+                                         'cloudify',
+                                         'proxy',
+                                         'client.py')
+    else:
+        proxy_client_path = proxy_client.__file__
+
     if proxy_client_path.endswith('.pyc'):
         proxy_client_path = proxy_client_path[:-1]
     local_script_path = get_script(ctx.download_resource, script_path)
