@@ -90,15 +90,15 @@ def run_module_task(task_mapping, fabric_env=None,
     return _run_task(task, task_properties, fabric_env)
 
 
-def _run(func, fabric_env=None, *args):
+def _run(func, fabric_env, *args):
     if fabric_env.get('hide'):
         with fabric_api.settings(
                 fabric_api.hide(fabric_env['hide']),
-                **_fabric_env(fabric_env, warn_only=False)):
+                **_fabric_env(fabric_env)):
             return func(*args)
     else:
         with fabric_api.settings(
-                **_fabric_env(fabric_env, warn_only=False)):
+                **_fabric_env(fabric_env)):
             return func(*args)
 
 
@@ -107,6 +107,7 @@ def _run_task(task, task_properties, fabric_env):
         task_properties = task_properties or {}
         return task(**task_properties)
 
+    fabric_env['warn_only'] = False
     return _run(execute, fabric_env, task_properties)
 
 
@@ -124,6 +125,8 @@ def run_commands(commands, fabric_env=None, **kwargs):
             if result.failed:
                 raise FabricCommandError(result)
 
+    fabric_env = fabric_env or {}
+    fabric_env['warn_only'] = True
     return _run(execute, fabric_env, commands)
 
 
@@ -211,7 +214,8 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
         finally:
             proxy.close()
 
-    return _run(execute, fabric_env)
+    fabric_env['warn_only'] = False
+    return _run(execute, fabric_env, False)
 
 
 def get_script(download_resource_func, script_path):
