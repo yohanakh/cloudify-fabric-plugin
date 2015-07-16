@@ -99,11 +99,11 @@ def _run_task(task, task_properties, fabric_env):
         with fabric_api.settings(
                 fabric_api.hide(fabric_env['hide']),
                 **_fabric_env(fabric_env, warn_only=False)):
-            execute(task_properties)
+            return execute(task_properties)
     else:
         with fabric_api.settings(
                 **_fabric_env(fabric_env, warn_only=False)):
-            execute(task_properties)
+            return execute(task_properties)
 
 
 @operation
@@ -219,11 +219,11 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
         with fabric_api.settings(
                 fabric_api.hide(fabric_env['hide']),
                 **_fabric_env(fabric_env, warn_only=True)):
-            execute()
+            return execute()
     else:
         with fabric_api.settings(
                 **_fabric_env(fabric_env, warn_only=True)):
-            execute()
+            return execute()
 
 
 def get_script(download_resource_func, script_path):
