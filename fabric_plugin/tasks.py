@@ -91,9 +91,19 @@ def run_module_task(task_mapping, fabric_env=None,
 
 
 def _run_task(task, task_properties, fabric_env):
-    with fabric_api.settings(**_fabric_env(fabric_env, warn_only=False)):
+    def execute(task_properties):
         task_properties = task_properties or {}
         return task(**task_properties)
+
+    if fabric_env.get('hide'):
+        with fabric_api.settings(
+                fabric_api.hide(fabric_env['hide']),
+                **_fabric_env(fabric_env, warn_only=False)):
+            execute(task_properties)
+    else:
+        with fabric_api.settings(
+                **_fabric_env(fabric_env, warn_only=False)):
+            execute(task_properties)
 
 
 @operation
@@ -103,12 +113,22 @@ def run_commands(commands, fabric_env=None, **kwargs):
     :param commands: a list of commands to run
     :param fabric_env: fabric configuration
     """
-    with fabric_api.settings(**_fabric_env(fabric_env, warn_only=True)):
+    def execute(commands):
         for command in commands:
             ctx.logger.info('running command: {0}'.format(command))
             result = fabric_api.run(command)
             if result.failed:
                 raise FabricCommandError(result)
+
+    if fabric_env and fabric_env.get('hide'):
+        with fabric_api.settings(
+                fabric_api.hide(fabric_env['hide']),
+                **_fabric_env(fabric_env, warn_only=True)):
+            execute(commands)
+    else:
+        with fabric_api.settings(
+                **_fabric_env(fabric_env, warn_only=True)):
+            execute(commands)
 
 
 @operation
@@ -145,7 +165,7 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
     if args:
         command = ' '.join([command] + args)
 
-    with fabric_api.settings(**_fabric_env(fabric_env, warn_only=False)):
+    def execute():
         if not fabric_files.exists(remote_ctx_dir):
             # there may be race conditions with other operations that
             # may be running in parallel, so we pass -p to make sure
@@ -194,6 +214,16 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
             return actual_ctx._return_value
         finally:
             proxy.close()
+
+    if fabric_env and fabric_env.get('hide'):
+        with fabric_api.settings(
+                fabric_api.hide(fabric_env['hide']),
+                **_fabric_env(fabric_env, warn_only=True)):
+            execute()
+    else:
+        with fabric_api.settings(
+                **_fabric_env(fabric_env, warn_only=True)):
+            execute()
 
 
 def get_script(download_resource_func, script_path):
