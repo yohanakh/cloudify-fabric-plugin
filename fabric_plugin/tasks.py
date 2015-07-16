@@ -90,7 +90,11 @@ def run_module_task(task_mapping, fabric_env=None,
     return _run_task(task, task_properties, fabric_env)
 
 
-def _run(func, fabric_env, *args):
+def _run(func, fabric_env, warn_only, *args):
+
+    fabric_env = fabric_env or {}
+    fabric_env['warn_only'] = fabric_env.get('warn_only', warn_only)
+
     if fabric_env.get('hide'):
         with fabric_api.settings(
                 fabric_api.hide(fabric_env['hide']),
@@ -107,8 +111,7 @@ def _run_task(task, task_properties, fabric_env):
         task_properties = task_properties or {}
         return task(**task_properties)
 
-    fabric_env['warn_only'] = False
-    return _run(execute, fabric_env, task_properties)
+    return _run(execute, fabric_env, False, task_properties)
 
 
 @operation
@@ -125,9 +128,7 @@ def run_commands(commands, fabric_env=None, **kwargs):
             if result.failed:
                 raise FabricCommandError(result)
 
-    fabric_env = fabric_env or {}
-    fabric_env['warn_only'] = True
-    return _run(execute, fabric_env, commands)
+    return _run(execute, fabric_env, True, commands)
 
 
 @operation
@@ -214,7 +215,6 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
         finally:
             proxy.close()
 
-    fabric_env['warn_only'] = False
     return _run(execute, fabric_env, False)
 
 
@@ -364,7 +364,7 @@ class CredentialsHandler():
         return host_string
 
 
-def _fabric_env(fabric_env, warn_only):
+def _fabric_env(fabric_env):
     """prepares fabric environment variables configuration
 
     :param fabric_env: fabric configuration
@@ -380,7 +380,6 @@ def _fabric_env(fabric_env, warn_only):
         'user': credentials.user,
         'key_filename': credentials.key_filename,
         'password': credentials.password,
-        'warn_only': fabric_env.get('warn_only', warn_only),
         'abort_exception': FabricTaskError,
     })
     # validations
