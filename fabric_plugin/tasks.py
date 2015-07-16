@@ -90,20 +90,33 @@ def run_module_task(task_mapping, fabric_env=None,
     return _run_task(task, task_properties, fabric_env)
 
 
+def _run(func, fabric_env=None, *args):
+    if fabric_env.get('hide'):
+        with fabric_api.settings(
+                fabric_api.hide(fabric_env['hide']),
+                **_fabric_env(fabric_env, warn_only=False)):
+            return func(*args)
+    else:
+        with fabric_api.settings(
+                **_fabric_env(fabric_env, warn_only=False)):
+            return func(*args)
+
+
 def _run_task(task, task_properties, fabric_env):
     def execute(task_properties):
         task_properties = task_properties or {}
         return task(**task_properties)
 
-    if fabric_env.get('hide'):
-        with fabric_api.settings(
-                fabric_api.hide(fabric_env['hide']),
-                **_fabric_env(fabric_env, warn_only=False)):
-            return execute(task_properties)
-    else:
-        with fabric_api.settings(
-                **_fabric_env(fabric_env, warn_only=False)):
-            return execute(task_properties)
+    _run(execute, fabric_env, task_properties)
+    # if fabric_env.get('hide'):
+    #     with fabric_api.settings(
+    #             fabric_api.hide(fabric_env['hide']),
+    #             **_fabric_env(fabric_env, warn_only=False)):
+    #         return execute(task_properties)
+    # else:
+    #     with fabric_api.settings(
+    #             **_fabric_env(fabric_env, warn_only=False)):
+    #         return execute(task_properties)
 
 
 @operation
@@ -120,15 +133,16 @@ def run_commands(commands, fabric_env=None, **kwargs):
             if result.failed:
                 raise FabricCommandError(result)
 
-    if fabric_env and fabric_env.get('hide'):
-        with fabric_api.settings(
-                fabric_api.hide(fabric_env['hide']),
-                **_fabric_env(fabric_env, warn_only=True)):
-            execute(commands)
-    else:
-        with fabric_api.settings(
-                **_fabric_env(fabric_env, warn_only=True)):
-            execute(commands)
+    _run(execute, fabric_env, commands)
+    # if fabric_env and fabric_env.get('hide'):
+    #     with fabric_api.settings(
+    #             fabric_api.hide(fabric_env['hide']),
+    #             **_fabric_env(fabric_env, warn_only=True)):
+    #         execute(commands)
+    # else:
+    #     with fabric_api.settings(
+    #             **_fabric_env(fabric_env, warn_only=True)):
+    #         execute(commands)
 
 
 @operation
@@ -215,15 +229,16 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
         finally:
             proxy.close()
 
-    if fabric_env and fabric_env.get('hide'):
-        with fabric_api.settings(
-                fabric_api.hide(fabric_env['hide']),
-                **_fabric_env(fabric_env, warn_only=True)):
-            return execute()
-    else:
-        with fabric_api.settings(
-                **_fabric_env(fabric_env, warn_only=True)):
-            return execute()
+    _run(execute, fabric_env)
+    # if fabric_env and fabric_env.get('hide'):
+    #     with fabric_api.settings(
+    #             fabric_api.hide(fabric_env['hide']),
+    #             **_fabric_env(fabric_env, warn_only=True)):
+    #         return execute()
+    # else:
+    #     with fabric_api.settings(
+    #             **_fabric_env(fabric_env, warn_only=True)):
+    #         return execute()
 
 
 def get_script(download_resource_func, script_path):
