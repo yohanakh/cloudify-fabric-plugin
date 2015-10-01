@@ -62,7 +62,7 @@ CLOUDIFY_MANAGER_PRIVATE_KEY_PATH = 'CLOUDIFY_MANAGER_PRIVATE_KEY_PATH'
 @operation
 def run_task(tasks_file, task_name, fabric_env=None,
              task_properties=None, **kwargs):
-    """runs the specified fabric task loaded from 'tasks_file'
+    """Runs the specified fabric task loaded from 'tasks_file'
 
     :param tasks_file: the tasks file
     :param task_name: the task name to run in 'tasks_file'
@@ -71,14 +71,14 @@ def run_task(tasks_file, task_name, fabric_env=None,
                             as invocation kwargs
     """
     task = _get_task(tasks_file, task_name)
-    ctx.logger.info('running task: {0} from {1}'.format(task_name, tasks_file))
+    ctx.logger.info('Running task: {0} from {1}'.format(task_name, tasks_file))
     return _run_task(task, task_properties, fabric_env)
 
 
 @operation
 def run_module_task(task_mapping, fabric_env=None,
                     task_properties=None, **kwargs):
-    """runs the specified fabric module task specified by mapping'
+    """Runs the specified fabric module task specified by mapping'
 
     :param task_mapping: the task module mapping
     :param fabric_env: fabric configuration
@@ -86,7 +86,7 @@ def run_module_task(task_mapping, fabric_env=None,
                             as invocation kwargs
     """
     task = _get_task_from_mapping(task_mapping)
-    ctx.logger.info('running task: {0}'.format(task_mapping))
+    ctx.logger.info('Running task: {0}'.format(task_mapping))
     return _run_task(task, task_properties, fabric_env)
 
 
@@ -111,24 +111,24 @@ def _run_task(task, task_properties, fabric_env):
         task_properties = task_properties or {}
         return task(**task_properties)
 
-    return _run(execute, fabric_env, False, task_properties)
+    return _run(execute, fabric_env, warn_only=False, *task_properties)
 
 
 @operation
 def run_commands(commands, fabric_env=None, **kwargs):
-    """runs the provider 'commands' in sequence
+    """Runs the provided 'commands' in sequence
 
     :param commands: a list of commands to run
     :param fabric_env: fabric configuration
     """
     def execute(commands):
         for command in commands:
-            ctx.logger.info('running command: {0}'.format(command))
+            ctx.logger.info('Running command: {0}'.format(command))
             result = fabric_api.run(command)
             if result.failed:
                 raise FabricCommandError(result)
 
-    return _run(execute, fabric_env, True, commands)
+    return _run(execute, fabric_env, warn_only=True, *commands)
 
 
 @operation
@@ -215,7 +215,7 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
         finally:
             proxy.close()
 
-    return _run(execute, fabric_env, False)
+    return _run(execute, fabric_env, warn_only=False)
 
 
 def get_script(download_resource_func, script_path):
