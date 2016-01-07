@@ -213,6 +213,7 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
         env_script.write('chmod +x {0}\n'.format(remote_script_path))
         env_script.write('chmod +x {0}\n'.format(remote_ctx_path))
         try:
+            fabric_api.put(_get_cloudify_ctx(), remote_cloudify_path)
             fabric_api.put(local_script_path, remote_script_path)
             fabric_api.put(env_script, remote_env_script_path)
             with fabric_context.cd(cwd):
