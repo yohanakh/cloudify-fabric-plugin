@@ -23,7 +23,7 @@ setup(
     author_email='cosmo-admin@gigaspaces.com',
     packages=['fabric_plugin'],
     package_data={'fabric_plugin': [
-        'fabric_plugin/resources/cloudify.py']},
+        'resources/cloudify.py']},
     license='LICENSE',
     description='Plugin for reomtely running fabric tasks and command',
     install_requires=[
