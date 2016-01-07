@@ -154,6 +154,7 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
     with fabric_api.settings(**_fabric_env(fabric_env, warn_only=False)):
         # if not fabric_files.exists(remote_cloudify_path):
             # fabric_api.put(_get_cloudify_package(), remote_ctx_dir)
+        ctx.logger.info('putting cloudify.py file...')
         fabric_api.put(_get_cloudify_ctx(), remote_cloudify_path)
         if not fabric_files.exists(remote_ctx_path):
             # there may be race conditions with other operations that
@@ -161,6 +162,7 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
             # we get 0 exit code if the directory already exists
             fabric_api.run('mkdir -p {0}'.format(remote_scripts_dir))
             fabric_api.run('mkdir -p {0}'.format(remote_work_dir))
+            ctx.logger.info('putting ctx file...')
             fabric_api.put(proxy_client_path, remote_ctx_path)
 
         actual_ctx = ctx._get_current_object()
@@ -205,16 +207,19 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
         proxy = proxy_server.HTTPCtxProxy(actual_ctx, port=ctx_server_port)
 
         env_script = StringIO()
-        env['PATH'] = '{0}:{1}:$PATH'.format(
-            remote_ctx_dir, os.path.join(remote_ctx_dir, 'cloudify'))
+        env['PATH'] = '{0}:$PATH'.format(remote_ctx_dir)
+        ctx.logger.info('set path to {0}...'.format(env['PATH']))
         env[CTX_SOCKET_URL] = proxy.socket_url
         for key, value in env.iteritems():
             env_script.write('export {0}={1}\n'.format(key, value))
         env_script.write('chmod +x {0}\n'.format(remote_script_path))
         env_script.write('chmod +x {0}\n'.format(remote_ctx_path))
         try:
+            ctx.logger.info('putting cloudify.py file...')
             fabric_api.put(_get_cloudify_ctx(), remote_cloudify_path)
+            ctx.logger.info('putting local script...')
             fabric_api.put(local_script_path, remote_script_path)
+            ctx.logger.info('putting env script...')
             fabric_api.put(env_script, remote_env_script_path)
             with fabric_context.cd(cwd):
                 with tunnel.remote(proxy.port):
