@@ -155,7 +155,8 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
         # if not fabric_files.exists(remote_cloudify_path):
             # fabric_api.put(_get_cloudify_package(), remote_ctx_dir)
         ctx.logger.info('putting cloudify.py file...')
-        fabric_api.put(_get_cloudify_ctx(), remote_cloudify_path)
+        # fabric_api.put(_get_cloudify_ctx(), remote_cloudify_path)
+        fabric_api.put(_get_cloudify_ctx(), remote_work_dir)
         if not fabric_files.exists(remote_ctx_path):
             # there may be race conditions with other operations that
             # may be running in parallel, so we pass -p to make sure
