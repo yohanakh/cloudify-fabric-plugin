@@ -22,10 +22,12 @@ setup(
     author='Gigaspaces',
     author_email='cosmo-admin@gigaspaces.com',
     packages=['fabric_plugin'],
+    package_data={'fabric_plugin': [
+        'resources/cloudify.py']},
     license='LICENSE',
     description='Plugin for reomtely running fabric tasks and command',
     install_requires=[
-        'cloudify-plugins-common>=3.3.1',
+        'cloudify-plugins-common>=3.3.0',
         'fabric==1.8.3',
         'six>=1.8.0',
     ]

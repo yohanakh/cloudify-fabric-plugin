@@ -152,14 +152,16 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
         command = ' '.join([command] + args)
 
     with fabric_api.settings(**_fabric_env(fabric_env, warn_only=False)):
-        if not fabric_files.exists(remote_ctx_path):
-            # there may be race conditions with other operations that
-            # may be running in parallel, so we pass -p to make sure
-            # we get 0 exit code if the directory already exists
-            fabric_api.run('mkdir -p {0}'.format(remote_scripts_dir))
+        # there may be race conditions with other operations that
+        # may be running in parallel, so we pass -p to make sure
+        # we get 0 exit code if the directory already exists
+        if not fabric_files.exists(remote_work_dir):
             fabric_api.run('mkdir -p {0}'.format(remote_work_dir))
-            # fabric_api.put(_get_cloudify_package(), remote_ctx_dir)
+        if not fabric_files.exists(remote_scripts_dir):
+            fabric_api.run('mkdir -p {0}'.format(remote_scripts_dir))
+        if not fabric_files.exists(remote_cloudify_path):
             fabric_api.put(_get_cloudify_ctx(), remote_cloudify_path)
+        if not fabric_files.exists(remote_ctx_path):
             fabric_api.put(proxy_client_path, remote_ctx_path)
 
         actual_ctx = ctx._get_current_object()
@@ -204,8 +206,8 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
         proxy = proxy_server.HTTPCtxProxy(actual_ctx, port=ctx_server_port)
 
         env_script = StringIO()
-        env['PATH'] = '{0}:{1}:$PATH'.format(
-            remote_ctx_dir, os.path.join(remote_ctx_dir, 'cloudify'))
+        env['PATH'] = '{0}:$PATH'.format(remote_ctx_dir)
+        env['PYTHONPATH'] = '{0}:$PYTHONPATH'.format(remote_ctx_dir)
         env[CTX_SOCKET_URL] = proxy.socket_url
         for key, value in env.iteritems():
             env_script.write('export {0}={1}\n'.format(key, value))
