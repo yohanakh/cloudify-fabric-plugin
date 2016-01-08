@@ -159,7 +159,7 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
             fabric_api.run('mkdir -p {0}'.format(remote_scripts_dir))
             fabric_api.run('mkdir -p {0}'.format(remote_work_dir))
             if not fabric_files.exists(remote_cloudify_path):
-                fabric_api.put(_get_cloudify_ctx(), remote_ctx_dir)
+                fabric_api.put(_get_cloudify_ctx(), remote_cloudify_path)
             fabric_api.put(proxy_client_path, remote_ctx_path)
 
         actual_ctx = ctx._get_current_object()
