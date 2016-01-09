@@ -21,7 +21,7 @@ class CtxNodeProperties(object):
         return json.loads(subprocess.check_output(cmd))
 
     def __get__(self, property_name):
-        self.__getitem__(property_name) or None
+        return self.__getitem__(property_name) or None
 
 
 class CtxNode(object):
