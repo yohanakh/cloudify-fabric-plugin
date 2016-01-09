@@ -22,7 +22,10 @@ class CtxNodeProperties(object):
         return json.loads(subprocess.check_output(cmd))
 
     def get(self, property_name, returns=None):
-        return self.__getitem__(property_name) or returns
+        try:
+            return self.__getitem__(property_name)
+        except:
+            return returns
 
 
 class CtxNode(object):
