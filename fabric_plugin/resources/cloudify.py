@@ -15,13 +15,14 @@ class CtxLogger(object):
         return self._logger(level='info', message=message)
 
 
+# TODO: set immutable properties here.
 class CtxNodeProperties(object):
     def __getitem__(self, property_name):
         cmd = ['ctx', '-j', 'node', 'properties', property_name]
         return json.loads(subprocess.check_output(cmd))
 
-    def __get__(self, property_name):
-        return self.__getitem__(property_name) or None
+    def get(self, property_name, returns=None):
+        return self.__getitem__(property_name) or returns
 
 
 class CtxNode(object):
@@ -39,6 +40,9 @@ class CtxInstanceRuntimeProperties(object):
         if self.relationship_type:
             cmd.insert(2, self.relationship_type)
         return json.loads(subprocess.check_output(cmd))
+
+    def get(self, property_name, returns=None):
+        return self.__getitem__(property_name) or returns
 
     def __setitem__(self, property_name, value):
         cmd = ['ctx', 'instance', 'runtime_properties', property_name,
