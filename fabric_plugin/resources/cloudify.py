@@ -20,6 +20,9 @@ class CtxNodeProperties(object):
         cmd = ['ctx', '-j', 'node', 'properties', property_name]
         return json.loads(subprocess.check_output(cmd))
 
+    def __get__(self, property_name):
+        self.__getitem__(property_name) or None
+
 
 class CtxNode(object):
     @property
@@ -39,7 +42,7 @@ class CtxInstanceRuntimeProperties(object):
 
     def __setitem__(self, property_name, value):
         cmd = ['ctx', 'instance', 'runtime_properties', property_name,
-               '@{0}'.format(value)]
+               '@"{0}"'.format(value)]
         if self.relationship_type:
             cmd.insert(2, self.relationship_type)
         return subprocess.check_output(cmd)
