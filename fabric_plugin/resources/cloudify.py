@@ -1,5 +1,5 @@
 """This implementation of ctx is still lacking and does not contain
-all features the actual ctx object provides.
+all features the actual ctx client provides.
 """
 
 import subprocess
@@ -29,9 +29,25 @@ class CtxNodeProperties(object):
 
 
 class CtxNode(object):
+    def _node(self, prop):
+        cmd = ['ctx', '-j', 'node', prop]
+        return json.loads(subprocess.check_output(cmd))
+
     @property
     def properties(self):
         return CtxNodeProperties()
+
+    @property
+    def id(self):
+        return self._node('id')
+
+    @property
+    def name(self):
+        return self._node('name')
+
+    @property
+    def type(self):
+        return self._node('type')
 
 
 class CtxInstanceRuntimeProperties(object):
@@ -59,24 +75,25 @@ class CtxNodeInstance(object):
     def __init__(self, relationship_type=None):
         self.relationship_type = relationship_type
 
+    def _instance(self, prop):
+        cmd = ['ctx', '-j', 'instance', prop]
+        return json.loads(subprocess.check_output(cmd))
+
     @property
     def runtime_properties(self):
         return CtxInstanceRuntimeProperties(self.relationship_type)
 
     @property
     def host_ip(self):
-        cmd = ['ctx', 'instance', 'host_ip']
-        return subprocess.check_output(cmd)
+        return self._instance('host_ip')
 
     @property
     def id(self):
-        cmd = ['ctx', 'instance', 'id']
-        return subprocess.check_output(cmd)
+        return self._instance('id')
 
     @property
     def relationships(self):
-        cmd = ['ctx', 'instance', 'relationships']
-        return subprocess.check_output(cmd)
+        return self._instance('relationships')
 
 
 class CtxRelationshipInstance(object):
@@ -116,18 +133,20 @@ class Ctx(object):
     def logger(self):
         return self._logger
 
-    def download_resource(self, source, destination=None):
+    def download_resource(self, source, destination=''):
         cmd = ['ctx', 'download-resource', source]
         if destination:
             cmd.append(destination)
         return subprocess.check_output(cmd)
 
-    def download_resource_and_render(self, source, destination=None,
+    def download_resource_and_render(self, source, destination='',
                                      params=None):
         cmd = ['ctx', 'download-resource-and-render', source]
         if destination:
             cmd.append(destination)
         if params:
+            if not isinstance(params, dict):
+                raise
             cmd.append(params)
         return subprocess.check_output(cmd)
 
