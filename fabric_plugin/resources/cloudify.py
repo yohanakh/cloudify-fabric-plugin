@@ -14,11 +14,19 @@ class CtxLogger(object):
     def info(self, message):
         return self._logger(level='info', message=message)
 
+    def warn(self, message):
+        return self._logger(level='warn', message=message)
+
 
 # TODO: set immutable properties here.
 class CtxNodeProperties(object):
+    def __init__(self, relationship_type=None):
+        self.relationship_type = relationship_type
+
     def __getitem__(self, property_name):
         cmd = ['ctx', '-j', 'node', 'properties', property_name]
+        if self.relationship_type:
+            cmd.insert(2, self.relationship_type)
         return json.loads(subprocess.check_output(cmd))
 
     def get(self, property_name, returns=None):
@@ -29,13 +37,16 @@ class CtxNodeProperties(object):
 
 
 class CtxNode(object):
+    def __init__(self, relationship_type=None):
+        self.relationship_type = relationship_type
+
     def _node(self, prop):
         cmd = ['ctx', '-j', 'node', prop]
         return json.loads(subprocess.check_output(cmd))
 
     @property
     def properties(self):
-        return CtxNodeProperties()
+        return CtxNodeProperties(self.relationship_type)
 
     @property
     def id(self):
@@ -103,6 +114,10 @@ class CtxRelationshipInstance(object):
     @property
     def instance(self):
         return CtxNodeInstance(self.relationship_type)
+
+    @property
+    def node(self):
+        return CtxNode(self.relationship_type)
 
 
 class Ctx(object):
