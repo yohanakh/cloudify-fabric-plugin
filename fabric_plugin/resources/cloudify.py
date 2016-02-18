@@ -17,6 +17,9 @@ class CtxLogger(object):
     def warn(self, message):
         return self._logger(level='warn', message=message)
 
+    def error(self, message):
+        return self._logger(level='error', message=message)
+
 
 # TODO: set immutable properties here.
 class CtxNodeProperties(object):
@@ -127,6 +130,9 @@ class Ctx(object):
         self._instance = CtxNodeInstance()
         self._target = CtxRelationshipInstance('target')
         self._source = CtxRelationshipInstance('source')
+
+    def __call__(self, ctx_command_reference):
+        return subprocess.check_output(ctx_command_reference.split())
 
     @property
     def node(self):
