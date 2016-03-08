@@ -16,27 +16,29 @@
 import os
 import importlib
 import json
-import requests
 import tempfile
-from StringIO import StringIO
+from multiprocessing import Process
+
+import requests
 
 from six import exec_
-from fabric import api as fabric_api
-from fabric import context_managers as fabric_context
-from fabric.contrib import files as fabric_files
-
 from cloudify import utils
 from cloudify import ctx
 from cloudify import exceptions
 from cloudify.decorators import operation
+from cloudify.exceptions import NonRecoverableError
+
+from StringIO import StringIO
+
+from fabric import api as fabric_api
+
+from fabric import context_managers as fabric_context
+from fabric.contrib import files as fabric_files
 from cloudify.proxy.client import CTX_SOCKET_URL
 from cloudify.proxy import client as proxy_client
 from cloudify.proxy import server as proxy_server
-from cloudify.exceptions import NonRecoverableError
-
 from fabric_plugin import tunnel
 from fabric_plugin import exec_env
-
 
 DEFAULT_BASE_DIR = '/tmp/cloudify-ctx'
 
@@ -111,42 +113,20 @@ def run_commands(commands, fabric_env=None, **kwargs):
             if result.failed:
                 raise FabricCommandError(result)
 
-
-@operation
-def run_script(script_path, fabric_env=None, process=None, **kwargs):
-
-    if not process:
-        process = {}
-    process = _create_process_config(process, kwargs)
-    base_dir = process.get('base_dir', DEFAULT_BASE_DIR)
-    ctx_server_port = process.get('ctx_server_port')
-
-    proxy_client_path = proxy_client.__file__
-    if proxy_client_path.endswith('.pyc'):
-        proxy_client_path = proxy_client_path[:-1]
-    local_script_path = get_script(ctx.download_resource, script_path)
-    base_script_path = os.path.basename(local_script_path)
-    remote_ctx_dir = base_dir
-    remote_ctx_path = '{0}/ctx'.format(remote_ctx_dir)
-    remote_scripts_dir = '{0}/scripts'.format(remote_ctx_dir)
-    remote_work_dir = '{0}/work'.format(remote_ctx_dir)
-    remote_path_suffix = '{0}-{1}'.format(base_script_path,
-                                          utils.id_generator(size=8))
-    remote_env_script_path = '{0}/env-{1}'.format(remote_scripts_dir,
-                                                  remote_path_suffix)
-    remote_script_path = '{0}/{1}'.format(remote_scripts_dir,
-                                          remote_path_suffix)
-
-    env = process.get('env', {})
-    cwd = process.get('cwd', remote_work_dir)
-    args = process.get('args')
-    command_prefix = process.get('command_prefix')
-
-    command = remote_script_path
-    if command_prefix:
-        command = '{0} {1}'.format(command_prefix, command)
-    if args:
-        command = ' '.join([command] + args)
+def run_with(**kwargs):
+    fabric_env = kwargs['fabric_env']
+    remote_ctx_path = kwargs['remote_ctx_path']
+    remote_scripts_dir = kwargs['remote_scripts_dir']
+    remote_work_dir = kwargs['remote_work_dir']
+    proxy_client_path = kwargs['proxy_client_path']
+    ctx_server_port = kwargs['ctx_server_port']
+    env = kwargs['env']
+    remote_ctx_dir = kwargs['remote_ctx_dir']
+    remote_script_path = kwargs['remote_script_path']
+    local_script_path = kwargs['local_script_path']
+    remote_env_script_path = kwargs['remote_env_script_path']
+    cwd = kwargs['cwd']
+    command = kwargs['command']
 
     with fabric_api.settings(**_fabric_env(fabric_env, warn_only=False)):
         if not fabric_files.exists(remote_ctx_path):
@@ -157,10 +137,14 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
             fabric_api.run('mkdir -p {0}'.format(remote_work_dir))
             fabric_api.put(proxy_client_path, remote_ctx_path)
 
+        # print("AAAAAAAAaaa")
         actual_ctx = ctx._get_current_object()
+        # print("actual_ctx: %s" % actual_ctx)
+        # print("Bbbbbbbbbbbbbbbbbbb")
 
         def returns(_value):
             actual_ctx._return_value = _value
+
         actual_ctx._return_value = None
         actual_ctx.returns = returns
 
@@ -215,6 +199,65 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
             return actual_ctx._return_value
         finally:
             proxy.close()
+
+
+@operation
+def run_script(script_path, fabric_env=None, process=None, **kwargs):
+    if not process:
+        process = {}
+    process = _create_process_config(process, kwargs)
+    base_dir = process.get('base_dir', DEFAULT_BASE_DIR)
+    ctx_server_port = process.get('ctx_server_port')
+
+    proxy_client_path = proxy_client.__file__
+    if proxy_client_path.endswith('.pyc'):
+        proxy_client_path = proxy_client_path[:-1]
+    local_script_path = get_script(ctx.download_resource, script_path)
+    base_script_path = os.path.basename(local_script_path)
+    remote_ctx_dir = base_dir
+    remote_ctx_path = '{0}/ctx'.format(remote_ctx_dir)
+    remote_scripts_dir = '{0}/scripts'.format(remote_ctx_dir)
+    remote_work_dir = '{0}/work'.format(remote_ctx_dir)
+    remote_path_suffix = '{0}-{1}'.format(base_script_path,
+                                          utils.id_generator(size=8))
+    remote_env_script_path = '{0}/env-{1}'.format(remote_scripts_dir,
+                                                  remote_path_suffix)
+    remote_script_path = '{0}/{1}'.format(remote_scripts_dir,
+                                          remote_path_suffix)
+
+    env = process.get('env', {})
+    cwd = process.get('cwd', remote_work_dir)
+    args = process.get('args')
+    command_prefix = process.get('command_prefix')
+
+    command = remote_script_path
+    if command_prefix:
+        command = '{0} {1}'.format(command_prefix, command)
+    if args:
+        command = ' '.join([command] + args)
+
+    myargs = {
+        'fabric_env': fabric_env,
+        'remote_ctx_path': remote_ctx_path,
+        'remote_scripts_dir': remote_scripts_dir,
+        'remote_work_dir': remote_work_dir,
+        'proxy_client_path': proxy_client_path,
+        'ctx_server_port': ctx_server_port,
+        'env': env,
+        'remote_ctx_dir': remote_ctx_dir,
+        'remote_script_path': remote_script_path,
+        'local_script_path': local_script_path,
+        'remote_env_script_path': remote_env_script_path,
+        'cwd': cwd,
+        'command': command
+    }
+    # print("myArgs: %s" % myargs)
+    p = Process(target=run_with, kwargs=myargs)
+    p.start()
+    p.join()
+
+    if p.exitcode == 1:
+        raise NonRecoverableError("Failed to run fabric")
 
 
 def get_script(download_resource_func, script_path):
