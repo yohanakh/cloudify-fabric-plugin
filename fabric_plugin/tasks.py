@@ -137,10 +137,7 @@ def run_with(**kwargs):
             fabric_api.run('mkdir -p {0}'.format(remote_work_dir))
             fabric_api.put(proxy_client_path, remote_ctx_path)
 
-        # print("AAAAAAAAaaa")
         actual_ctx = ctx._get_current_object()
-        # print("actual_ctx: %s" % actual_ctx)
-        # print("Bbbbbbbbbbbbbbbbbbb")
 
         def returns(_value):
             actual_ctx._return_value = _value
@@ -236,7 +233,7 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
     if args:
         command = ' '.join([command] + args)
 
-    myargs = {
+    fabric_process_args = {
         'fabric_env': fabric_env,
         'remote_ctx_path': remote_ctx_path,
         'remote_scripts_dir': remote_scripts_dir,
@@ -251,8 +248,7 @@ def run_script(script_path, fabric_env=None, process=None, **kwargs):
         'cwd': cwd,
         'command': command
     }
-    # print("myArgs: %s" % myargs)
-    p = Process(target=run_with, kwargs=myargs)
+    p = Process(target=run_with, kwargs=fabric_process_args)
     p.start()
     p.join()
 
